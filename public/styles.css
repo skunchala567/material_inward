@@ -678,6 +678,37 @@ th {
   background: var(--soft);
 }
 
+.validation-modal {
+  width: min(520px, 100%);
+}
+
+.validation-list {
+  margin: 12px 0 0;
+  padding-left: 20px;
+  color: var(--danger);
+  display: grid;
+  gap: 6px;
+  font-weight: 900;
+}
+
+.field.invalid-field label,
+.upload-card.invalid-field label {
+  color: var(--danger);
+}
+
+.field.invalid-field input,
+.field.invalid-field select,
+.field.invalid-field textarea,
+.upload-card.invalid-field {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.14);
+}
+
+.upload-card.invalid-field .preview-box {
+  border-color: var(--danger);
+  background: rgba(185, 28, 28, 0.06);
+}
+
 .camera-modal {
   width: min(760px, 100%);
 }

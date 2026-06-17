@@ -24,12 +24,30 @@ const cameraMessage = document.querySelector("#cameraMessage");
 const closeCameraBtn = document.querySelector("#closeCameraBtn");
 const captureCameraBtn = document.querySelector("#captureCameraBtn");
 const switchCameraBtn = document.querySelector("#switchCameraBtn");
+const validationModal = document.querySelector("#validationModal");
+const validationList = document.querySelector("#validationList");
+const closeValidationBtn = document.querySelector("#closeValidationBtn");
 const screenSummary = document.querySelector("#screenSummary");
 const exportBtn = document.querySelector("#exportBtn");
 const createdByRoleInput = document.querySelector("#created_by_role");
 const createdByNameInput = document.querySelector("#created_by_name");
 
 const imageFields = ["po_image", "material_image_1", "material_image_2"];
+const requiredFieldLabels = {
+  branch_name: "Branch Name",
+  entry_date: "Date",
+  entry_time: "Time",
+  vendor_name: "Vendor Name",
+  whom_to_meet: "Whom To Meet",
+  delivery_type: "Delivery Type",
+  department_name: "Department Name",
+  po_number: "Purchase Order Number",
+  created_by_name: "Filled By",
+  material_details: "Material Details / Quantity",
+  po_image: "Purchase Order / Invoice Photo",
+  material_image_1: "Material Photo 1",
+  material_image_2: "Material Photo 2"
+};
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const branchOptions = [
   "DPS Nacharam",
@@ -303,6 +321,54 @@ function resetPreviews() {
   });
 }
 
+function fieldContainer(input) {
+  return input.closest(".field") || input.closest(".upload-card");
+}
+
+function fieldLabel(input) {
+  const key = input.name || input.id;
+  return requiredFieldLabels[key] || input.labels?.[0]?.textContent || "Required field";
+}
+
+function clearValidationHighlights() {
+  form.querySelectorAll(".invalid-field").forEach((element) => {
+    element.classList.remove("invalid-field");
+  });
+}
+
+function missingRequiredFields() {
+  return Array.from(form.querySelectorAll("[required]")).filter((input) => {
+    if (input.type === "file") return !input.files || input.files.length === 0;
+    return !String(input.value || "").trim();
+  });
+}
+
+function showValidationPopup(fields) {
+  validationList.innerHTML = fields
+    .map((input) => `<li>${escapeHtml(fieldLabel(input))}</li>`)
+    .join("");
+  validationModal.hidden = false;
+}
+
+function closeValidationPopup() {
+  validationModal.hidden = true;
+}
+
+function validateRegisterForm() {
+  clearValidationHighlights();
+  const missingFields = missingRequiredFields();
+  if (!missingFields.length) return true;
+
+  missingFields.forEach((input) => {
+    fieldContainer(input)?.classList.add("invalid-field");
+  });
+  showValidationPopup(missingFields);
+  showMessage("Please complete the highlighted required fields.", "error");
+  missingFields[0].scrollIntoView({ behavior: "smooth", block: "center" });
+  missingFields[0].focus?.({ preventScroll: true });
+  return false;
+}
+
 function setImageFile(inputId, file) {
   const input = document.querySelector(`#${inputId}`);
   const preview = document.querySelector(`#${inputId}_preview`);
@@ -310,6 +376,7 @@ function setImageFile(inputId, file) {
   dataTransfer.items.add(file);
   input.files = dataTransfer.files;
   preview.src = URL.createObjectURL(file);
+  fieldContainer(input)?.classList.remove("invalid-field");
 }
 
 function setupImagePreviews() {
@@ -326,6 +393,7 @@ function setupImagePreviews() {
         return;
       }
       preview.src = URL.createObjectURL(file);
+      fieldContainer(input)?.classList.remove("invalid-field");
     });
   });
 }
@@ -444,7 +512,7 @@ function setupBranchSearch() {
 
 async function submitForm(event) {
   event.preventDefault();
-  if (!form.reportValidity()) return;
+  if (!validateRegisterForm()) return;
 
   submitBtn.disabled = true;
   showMessage("Saving material inward entry...");
@@ -605,6 +673,16 @@ function closeImage() {
 }
 
 form.addEventListener("submit", submitForm);
+form.addEventListener("input", (event) => {
+  fieldContainer(event.target)?.classList.remove("invalid-field");
+});
+form.addEventListener("change", (event) => {
+  fieldContainer(event.target)?.classList.remove("invalid-field");
+});
+closeValidationBtn.addEventListener("click", closeValidationPopup);
+validationModal.addEventListener("click", (event) => {
+  if (event.target === validationModal) closeValidationPopup();
+});
 document.querySelectorAll("[data-camera-target]").forEach((button) => {
   button.addEventListener("click", () => openCamera(button.dataset.cameraTarget));
 });

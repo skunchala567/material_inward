@@ -30,7 +30,7 @@
     </nav>
 
     <section id="registerView" class="view active">
-      <form id="inwardForm" class="panel">
+      <form id="inwardForm" class="panel" novalidate>
         <div class="panel-head">
           <div>
             <h2>New Material Entry</h2>
@@ -235,6 +235,17 @@
         <button id="closeModalBtn" class="btn subtle" type="button">Close</button>
       </div>
       <img id="modalImage" alt="Uploaded material record">
+    </div>
+  </div>
+
+  <div id="validationModal" class="modal-backdrop" hidden>
+    <div class="modal validation-modal">
+      <div class="modal-head">
+        <h2>Missing Required Details</h2>
+        <button id="closeValidationBtn" class="btn subtle" type="button">Close</button>
+      </div>
+      <p class="message error">Please fill the highlighted fields before submitting.</p>
+      <ul id="validationList" class="validation-list"></ul>
     </div>
   </div>
 
