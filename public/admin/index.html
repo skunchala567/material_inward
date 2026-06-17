@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Material Inward Register</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="mark" href="/" aria-label="Material Inward Register home">MIR</a>
+      <div class="brand">
+        <h1>Material Inward Register</h1>
+        <p id="screenSummary">Entry form, photo uploads, inward numbers, and admin records</p>
+      </div>
+      <div class="top-actions">
+        <a class="btn subtle" id="exportBtn" href="/api/material-inward/export" data-admin-only hidden>Export Excel</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <nav class="tabs" aria-label="Material inward sections">
+      <a class="tab active" href="/register" data-screen-link="register">Register Entry</a>
+      <a class="tab" href="/admin" data-screen-link="admin" data-admin-only hidden>Admin Records</a>
+    </nav>
+
+    <section id="registerView" class="view active">
+      <form id="inwardForm" class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>New Material Entry</h2>
+            <p>Submit details and upload document photos before receiving material.</p>
+          </div>
+          <span class="status-chip" id="clockChip">Today</span>
+        </div>
+
+        <div class="form-grid">
+          <input id="created_by_role" name="created_by_role" type="hidden">
+
+          <div class="field">
+            <label for="branch_name">Branch Name</label>
+            <div class="suggest-field">
+              <input id="branch_name" name="branch_name" required autocomplete="off" placeholder="Type branch name" aria-autocomplete="list" aria-controls="branchSuggestions">
+              <div id="branchSuggestions" class="suggestion-list" role="listbox" hidden></div>
+            </div>
+          </div>
+
+          <div class="field compact">
+            <label for="entry_date">Date</label>
+            <input id="entry_date" name="entry_date" type="date" required readonly>
+          </div>
+
+          <div class="field compact">
+            <label for="entry_time">Time</label>
+            <input id="entry_time" name="entry_time" type="time" required readonly>
+          </div>
+
+          <div class="field">
+            <label for="vendor_name">Vendor Name</label>
+            <input id="vendor_name" name="vendor_name" required autocomplete="organization" placeholder="Enter vendor name">
+          </div>
+
+          <div class="field">
+            <label for="whom_to_meet">Whom To Meet</label>
+            <input id="whom_to_meet" name="whom_to_meet" required placeholder="Employee or contact person">
+          </div>
+
+          <div class="field">
+            <label for="delivery_type">Delivery Type</label>
+            <select id="delivery_type" name="delivery_type" required>
+              <option value="">Select delivery type</option>
+              <option>Purchase Order</option>
+              <option>Courier</option>
+              <option>Direct Delivery</option>
+              <option>Others</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="department_name">Department Name</label>
+            <select id="department_name" name="department_name" required>
+              <option value="">Select department</option>
+              <option>Accounts</option>
+              <option>Administration</option>
+              <option>Engineering</option>
+              <option>Housekeeping</option>
+              <option>IT</option>
+              <option>Maintenance</option>
+              <option>Production</option>
+              <option>Purchase</option>
+              <option>Stores</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="po_number">Purchase Order Number</label>
+            <input id="po_number" name="po_number" required placeholder="PO / reference number">
+          </div>
+
+          <div class="field">
+            <label for="created_by_name">Filled By</label>
+            <input id="created_by_name" name="created_by_name" required placeholder="Security / admin staff name">
+          </div>
+
+          <div class="field full">
+            <label for="material_details">Material Details / Quantity</label>
+            <textarea id="material_details" name="material_details" required placeholder="Example: Safety gloves - 20 boxes, invoice no. 4837"></textarea>
+          </div>
+
+          <div class="upload-card">
+            <label for="po_image">Upload Purchase Order / Invoice Photo</label>
+            <div class="upload-actions">
+              <button class="btn subtle camera-btn" type="button" data-camera-target="po_image">Capture Photo</button>
+            </div>
+            <input id="po_image" name="po_image" type="file" accept="image/*" required>
+            <div class="preview-box"><img id="po_image_preview" alt=""></div>
+          </div>
+
+          <div class="upload-card">
+            <label for="material_image_1">Upload Material Photo 1</label>
+            <div class="upload-actions">
+              <button class="btn subtle camera-btn" type="button" data-camera-target="material_image_1">Capture Photo</button>
+            </div>
+            <input id="material_image_1" name="material_image_1" type="file" accept="image/*" required>
+            <div class="preview-box"><img id="material_image_1_preview" alt=""></div>
+          </div>
+
+          <div class="upload-card">
+            <label for="material_image_2">Upload Material Photo 2</label>
+            <div class="upload-actions">
+              <button class="btn subtle camera-btn" type="button" data-camera-target="material_image_2">Capture Photo</button>
+            </div>
+            <input id="material_image_2" name="material_image_2" type="file" accept="image/*" required>
+            <div class="preview-box"><img id="material_image_2_preview" alt=""></div>
+          </div>
+        </div>
+
+        <div class="form-footer">
+          <p id="formMessage" class="message" role="status"></p>
+          <button id="submitBtn" class="btn primary" type="submit">Submit Material Entry</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="adminView" class="view">
+      <div class="panel">
+        <div class="panel-head admin-head">
+          <div>
+            <h2>Submitted Records</h2>
+            <p>Search, review uploaded images, and export the register.</p>
+          </div>
+          <button id="refreshRecordsBtn" class="btn subtle" type="button">Refresh</button>
+        </div>
+
+        <form id="searchForm" class="search-grid">
+          <input id="date_from" name="date_from" type="hidden">
+          <input id="date_to" name="date_to" type="hidden">
+          <div class="date-range-field" id="adminDateRange"></div>
+          <input id="search_vendor" name="vendor" placeholder="Vendor Name">
+          <input id="search_po" name="po" placeholder="PO Number">
+          <input id="search_filled_by" name="created_by_name" placeholder="Filled By Name">
+          <select id="search_branch" name="branch">
+            <option value="">All Branches</option>
+            <option>DPS Nacharam</option>
+            <option>DPS Nadergul</option>
+            <option>DPS Aerocity</option>
+            <option>DPS Santosh Nagar</option>
+            <option>DPS Mahendra Hills</option>
+            <option>PMS Alwal</option>
+            <option>PMS Bowenpally</option>
+            <option>PMS Tirumalagiri</option>
+            <option>PAIS Saroor Nagar</option>
+            <option>PIS Gandipet</option>
+            <option>PIS Sagar road</option>
+            <option>PIS Thumukunta</option>
+          </select>
+          <button class="btn primary" type="submit">Search</button>
+          <button id="clearSearchBtn" class="btn subtle" type="button">Clear</button>
+        </form>
+
+        <div class="summary-panel">
+          <div class="summary-head">
+            <h3>Branch Wise Entries</h3>
+            <span class="record-count" id="summaryRangeLabel">Selected period</span>
+          </div>
+          <div class="table-wrap summary-table-wrap">
+            <table class="summary-table">
+              <thead>
+                <tr>
+                  <th>Branch</th>
+                  <th>Entries</th>
+                  <th>Last Filled By</th>
+                  <th>Last Entry Date</th>
+                </tr>
+              </thead>
+              <tbody id="branchSummaryBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="record-count" id="recordCount">No records loaded</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Inward No</th>
+                <th>Date / Time</th>
+                <th>Branch</th>
+                <th>Vendor</th>
+                <th>Meeting</th>
+                <th>Delivery</th>
+                <th>Department</th>
+                <th>PO No</th>
+                <th>Material</th>
+                <th>Filled By</th>
+                <th>Images</th>
+              </tr>
+            </thead>
+            <tbody id="recordsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="imageModal" class="modal-backdrop" hidden>
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="modalTitle">Uploaded Image</h2>
+        <button id="closeModalBtn" class="btn subtle" type="button">Close</button>
+      </div>
+      <img id="modalImage" alt="Uploaded material record">
+    </div>
+  </div>
+
+  <div id="cameraModal" class="modal-backdrop" hidden>
+    <div class="modal camera-modal">
+      <div class="modal-head">
+        <h2 id="cameraTitle">Capture Photo</h2>
+        <button id="closeCameraBtn" class="btn subtle" type="button">Close</button>
+      </div>
+      <div class="camera-stage">
+        <video id="cameraVideo" autoplay playsinline muted></video>
+        <canvas id="cameraCanvas" hidden></canvas>
+      </div>
+      <p id="cameraMessage" class="message" role="status"></p>
+      <div class="camera-actions">
+        <button id="captureCameraBtn" class="btn primary" type="button">Use This Photo</button>
+        <button id="switchCameraBtn" class="btn subtle" type="button">Switch Camera</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
