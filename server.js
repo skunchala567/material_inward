@@ -5,14 +5,19 @@ const path = require("path");
 const express = require("express");
 const multer = require("multer");
 const mysql = require("mysql2/promise");
+const cloudinary = require("cloudinary").v2;
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const rootDir = __dirname;
 const publicDir = path.join(rootDir, "public");
-const uploadDir = path.join(rootDir, "uploads");
 
-fs.mkdirSync(uploadDir, { recursive: true });
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST || "localhost",
@@ -40,21 +45,8 @@ const requiredTextFields = [
 ];
 const allowedRoles = new Set(["security", "admin"]);
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || ".jpg";
-    const safeBase = path
-      .basename(file.originalname, ext)
-      .replace(/[^a-z0-9]+/gi, "-")
-      .replace(/^-|-$/g, "")
-      .slice(0, 40) || "image";
-    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}-${safeBase}${ext}`);
-  }
-});
-
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (!file.mimetype.startsWith("image/")) {
@@ -64,6 +56,24 @@ const upload = multer({
     cb(null, true);
   }
 });
+
+// Helper to upload to Cloudinary
+async function uploadToCloudinary(fileBuffer, filename) {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: "material-inward-register",
+        resource_type: "auto",
+        public_id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }
+    );
+    uploadStream.end(fileBuffer);
+  });
+}
 
 app.use(express.json());
 
@@ -78,18 +88,14 @@ app.get("/register", serveAppPage);
 app.get("/admin", serveAppPage);
 
 app.use(express.static(publicDir));
-app.use("/uploads", express.static(uploadDir));
 
 function clean(value) {
   return String(value || "").trim();
 }
 
-function removeUploadedFiles(files = {}) {
-  Object.values(files).flat().forEach((file) => {
-    if (file && file.path) {
-      fs.unlink(file.path, () => {});
-    }
-  });
+// No longer needed - Cloudinary handles file management
+async function removeUploadedFiles() {
+  // Files are stored on Cloudinary, no cleanup needed
 }
 
 function validatePayload(body, files) {
@@ -163,9 +169,9 @@ function rowToRecord(row) {
   return {
     ...row,
     entry_date: row.entry_date instanceof Date ? row.entry_date.toISOString().slice(0, 10) : row.entry_date,
-    po_image_url: row.po_image ? `/uploads/${row.po_image}` : "",
-    material_image_1_url: row.material_image_1 ? `/uploads/${row.material_image_1}` : "",
-    material_image_2_url: row.material_image_2 ? `/uploads/${row.material_image_2}` : ""
+    po_image_url: row.po_image || "",
+    material_image_1_url: row.material_image_1 || "",
+    material_image_2_url: row.material_image_2 || ""
   };
 }
 
@@ -179,13 +185,17 @@ app.post(
   async (req, res) => {
     const error = validatePayload(req.body, req.files || {});
     if (error) {
-      removeUploadedFiles(req.files);
       res.status(400).json({ error });
       return;
     }
 
     const connection = await pool.getConnection();
     try {
+      // Upload images to Cloudinary
+      const poImageUrl = (await uploadToCloudinary(req.files.po_image[0].buffer, "po_image")).secure_url;
+      const materialImage1Url = (await uploadToCloudinary(req.files.material_image_1[0].buffer, "material_image_1")).secure_url;
+      const materialImage2Url = (await uploadToCloudinary(req.files.material_image_2[0].buffer, "material_image_2")).secure_url;
+
       await connection.beginTransaction();
       const year = clean(req.body.entry_date).slice(0, 4);
       const inwardNo = await generateInwardNo(connection, year);
@@ -202,9 +212,9 @@ app.post(
         clean(req.body.department_name),
         clean(req.body.po_number),
         clean(req.body.material_details),
-        req.files.po_image[0].filename,
-        req.files.material_image_1[0].filename,
-        req.files.material_image_2[0].filename,
+        poImageUrl,
+        materialImage1Url,
+        materialImage2Url,
         createdByRole,
         createdByName
       ];
@@ -221,7 +231,6 @@ app.post(
       res.status(201).json({ id: result.insertId, inward_no: inwardNo });
     } catch (err) {
       await connection.rollback();
-      removeUploadedFiles(req.files);
       console.error(err);
       res.status(500).json({ error: "Unable to save material inward record." });
     } finally {

@@ -6,8 +6,19 @@ Ready-to-run single-page web application for recording material inward entries w
 
 - Node.js 18 or newer
 - MySQL 8 or compatible MySQL server
+- Cloudinary account (for image storage)
 
 ## Setup
+
+### Get Cloudinary Credentials
+
+1. Sign up at [cloudinary.com](https://cloudinary.com) (free account available)
+2. Go to your Dashboard → Settings → Copy:
+   - Cloud Name
+   - API Key
+   - API Secret (keep this secret!)
+
+### Installation Steps
 
 1. Create the database and table:
 
@@ -23,13 +34,25 @@ Or run `database.sql` from your MySQL client after opening this folder.
 npm install
 ```
 
-3. Create `.env` from the example and update your MySQL credentials:
+3. Create `.env` from the example and update your credentials:
 
 ```bash
 copy .env.example .env
 ```
 
-4. Start the app:
+Then edit `.env` and add:
+- **MySQL credentials** (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME)
+- **Cloudinary credentials** (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET)
+
+4. Run the Cloudinary database migration:
+
+```bash
+node migrate-to-cloudinary.js
+```
+
+This updates your database schema to store full Cloudinary URLs instead of local filenames.
+
+5. Start the app:
 
 ```bash
 npm start
@@ -52,9 +75,9 @@ http://localhost:3000/admin
 - `public/index.html` - single-page form and admin page
 - `public/styles.css` - responsive light theme UI
 - `public/app.js` - validation, previews, submit, admin search, image modal
-- `server.js` - Express API, MySQL save/search/export, upload handling
+- `server.js` - Express API, MySQL save/search/export, Cloudinary upload handling
 - `database.sql` - MySQL database and `material_inward_register` table
-- `uploads/` - uploaded PO/invoice and material photos
+- `migrate-to-cloudinary.js` - Database migration script for Cloudinary integration
 
 ## Roles
 
@@ -94,7 +117,7 @@ Use a VPS, cloud server, cPanel Node.js app, Render/Railway/DigitalOcean, or any
 
 - Node.js 18+
 - MySQL
-- Persistent disk storage for `uploads/`
+- Cloudinary account (for image storage — no local disk storage needed)
 - Custom domain/subdomain
 
 ### 2. DNS
@@ -131,6 +154,9 @@ DB_USER
 DB_PASSWORD
 DB_NAME
 PORT
+CLOUDINARY_CLOUD_NAME
+CLOUDINARY_API_KEY
+CLOUDINARY_API_SECRET
 ```
 
 ### 4. Install and Create Database
@@ -138,6 +164,7 @@ PORT
 ```bash
 npm install --omit=dev
 mysql -u root -p < database.sql
+node migrate-to-cloudinary.js
 ```
 
 ### 5. Run with PM2
